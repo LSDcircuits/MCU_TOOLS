@@ -1,5 +1,4 @@
-# FOURIER_WINDING_QT_FULL.py
-# Clean + Optimized + Proper Scaling
+# FOURIER_WINDING_QT_WITH_COM_DISPLAY.py
 
 import sys
 import numpy as np
@@ -14,7 +13,7 @@ class MyWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Fourier Winding Visualization")
-        self.setFixedSize(1200, 650)
+        self.setFixedSize(1200, 700)
 
         # -------- Parameters --------
         self.A = 4
@@ -27,6 +26,15 @@ class MyWindow(QWidget):
         self.slider_A = self.make_slider(20, "A", self.A)
         self.slider_B = self.make_slider(80, "B", self.B)
         self.slider_w = self.make_slider(140, "Winding ω", self.w)
+
+        # -------- Center of Mass Output Labels --------
+        self.com_label = QLabel("Center of Mass: (0.0 , 0.0)", self)
+        self.com_label.move(500, 20)
+        self.com_label.resize(400, 30)
+
+        self.mag_label = QLabel("Magnitude |COM|: 0.0", self)
+        self.mag_label.move(500, 50)
+        self.mag_label.resize(400, 30)
 
         # -------- Time Domain Chart --------
         self.series_time = QLineSeries()
@@ -41,7 +49,7 @@ class MyWindow(QWidget):
 
         self.view_time = QChartView(self.chart_time, self)
         self.view_time.setRenderHint(QPainter.Antialiasing)
-        self.view_time.setGeometry(20, 220, 550, 380)
+        self.view_time.setGeometry(20, 250, 550, 400)
 
         # -------- Complex Winding Chart --------
         self.series_complex = QLineSeries()
@@ -61,7 +69,7 @@ class MyWindow(QWidget):
 
         self.view_complex = QChartView(self.chart_complex, self)
         self.view_complex.setRenderHint(QPainter.Antialiasing)
-        self.view_complex.setGeometry(620, 220, 550, 380)
+        self.view_complex.setGeometry(620, 250, 550, 400)
 
         self.update_plot()
 
@@ -73,8 +81,8 @@ class MyWindow(QWidget):
         slider = QSlider(Qt.Horizontal, self)
         slider.setGeometry(120, y_pos, 300, 20)
         slider.setMinimum(1)
-        slider.setMaximum(20)
-        slider.setValue(value)
+        slider.setMaximum(200)
+        slider.setValue(int(value * 10))
 
         slider.valueChanged.connect(
             lambda val, n=name, l=label: self.update_value(n, val, l)
@@ -113,11 +121,23 @@ class MyWindow(QWidget):
         complex_points = [QPointF(real[i], imag[i]) for i in range(len(real))]
         self.series_complex.replace(complex_points)
 
-        # ----- Center of mass -----
+        # ----- Center of Mass -----
         com = np.mean(complex_signal)
-        self.series_com.replace([QPointF(com.real, com.imag)])
+        com_real = np.real(com)
+        com_imag = np.imag(com)
+        magnitude = np.abs(com)
 
-        # ----- Dynamic axis scaling (prevents clipping) -----
+        self.series_com.replace([QPointF(com_real, com_imag)])
+
+        # Update labels
+        self.com_label.setText(
+            f"Center of Mass: ({com_real:.4f} , {com_imag:.4f})"
+        )
+        self.mag_label.setText(
+            f"Magnitude |COM|: {magnitude:.4f}"
+        )
+
+        # ----- Dynamic scaling -----
         max_val = max(np.max(np.abs(real)), np.max(np.abs(imag))) + 0.5
         max_val = max(max_val, 1.5)
 
