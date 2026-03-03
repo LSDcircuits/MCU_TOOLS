@@ -1,0 +1,84 @@
+Command line for linux:
+
+
+move (mv): mv -(option)
+
+| Option | Meaning                            |
+| ------ | ---------------------------------- |
+| `-i`   | Interactive (ask before overwrite) |
+| `-f`   | Force overwrite                    |
+| `-n`   | No overwrite                       |
+| `-v`   | Verbose (show actions)             |
+
+
+Remove (rm); rm -(option)
+
+| Option | Meaning                         |
+| ------ | ------------------------------- |
+| `-f`   | Force (no warnings)             |
+| `-i`   | Interactive (ask before delete) |
+| `-r`   | Recursive (delete directories)  |
+| `-R`   | Recursive (portable form)       |
+| `-v`   | Verbose (show what's deleted)   |
+| `-d`   | Remove empty directory          |
+
+
+Copy commands (CP): CP -(option)
+
+| Option | Meaning                                                                                    |
+| ------ | ------------------------------------------------------------------------------------------ |
+| `-f`   | Force overwrite (remove destination if needed)                                             |
+| `-i`   | Interactive (ask before overwrite)                                                         |
+| `-n`   | No-clobber (do NOT overwrite existing file)                                                |
+| `-r`   | Recursive (copy directories)                                                               |
+| `-R`   | Recursive (portable version; recommended)                                                  |
+| `-v`   | Verbose (show what is being copied)                                                        |
+| `-u`   | Copy only if source is newer                                                               |
+| `-p`   | Preserve mode, ownership, timestamps                                                       |
+| `-a`   | Archive mode (Linux: preserves everything; macOS: similar but slightly different behavior) |
+| `-L`   | Follow symbolic links                                                                      |
+| `-P`   | Do NOT follow symbolic links                                                               |
+| `-H`   | Follow symlinks on command line only                                                       |
+
+
+
+New directory (mkdir): mkdir -(option)
+
+| Option    | Meaning                             |
+| --------- | ----------------------------------- |
+| `-p`      | Create parent directories as needed |
+| `-v`      | Verbose (show what is created)      |
+| `-m MODE` | Set permissions (mode) at creation  |
+
+
+
+
+find | file type | name 
+find . -type d -name "pico"/(Example)
+
+| Option    | Meaning      |
+| --------- | ------------ |
+| `-type f` | Regular file |
+| `-type d` | Directory    |
+| `-type l` | Symlink      |
+
+
+
+Grep is useful to find strings in memory (in files)
+grep = Global Regular Expression Prin 
+Not preinstalled.
+
+| Option         | Meaning                   |
+| -------------- | ------------------------- |
+| `-i`           | Ignore case               |
+| `-R`           | Recursive                 |
+| `-n`           | Show line number          |
+| `-v`           | Invert match              |
+| `-w`           | Whole word                |
+| `-c`           | Count                     |
+| `-l`           | Show only filenames       |
+| `-E`           | Extended regex            |
+| `--color=auto` | Highlight matches (Linux) |
+
+
+
