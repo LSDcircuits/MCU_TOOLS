@@ -23,3 +23,8 @@ Adding:
 - JWC DEBUG (FT232RL)
 
 
+Note: Alot of code here inst reliable, ive used Tne file called dataflow to setup
+a type of memory management sysrtem (kid of its python) value management system
+which i can feed LLM to make a app. its Useful sice having this structure works
+for most small projectsd and when aksign a LLm to use this as a template it doesent 
+give back spaggethy code. 
