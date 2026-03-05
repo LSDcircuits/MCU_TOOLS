@@ -1,3 +1,5 @@
+# forurier winding made to analysie slow signal recording.
+
 import sys
 import numpy as np
 import pandas as pd
