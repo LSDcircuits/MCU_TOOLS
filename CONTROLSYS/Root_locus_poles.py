@@ -1,5 +1,6 @@
 # root_locus_interactive.py - Interactive Root Locus Plotter
 # Uses PySide6 for GUI and matplotlib for plotting
+# this file is AI based on previous code structures ive used. 
 
 import sys
 import numpy as np
