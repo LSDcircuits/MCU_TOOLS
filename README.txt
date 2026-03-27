@@ -25,6 +25,9 @@ Adding:
 CONTROL SYSTEMS:
  - Fourier winding
  - Fourier winding form data
+ - MCU fourier (the SLowest FFT to exist)
+ - Root locus (simplest possible to check answers)
+ - mass damper system (Block diagonal (modal) , expermineting with true diagonal) 
 
 Note: Alot of code here inst reliable, ive used Tne file called dataflow to setup
 a type of memory management sysrtem (kid of its python), value management system
