@@ -27,7 +27,11 @@ CONTROL SYSTEMS:
  - Fourier winding form data
 
 Note: Alot of code here inst reliable, ive used Tne file called dataflow to setup
-a type of memory management sysrtem (kid of its python) value management system
+a type of memory management sysrtem (kid of its python), value management system
 which i can feed LLM to make a app. its Useful sice having this structure works
 for most small projectsd and when aksign a LLm to use this as a template it doesent 
 give back spaggethy code. 
+
+If interested in using Kimi K2 for making logical single widget apps, using (buttons GUI + flow) as a prompt allows it to
+give back rather reliable code up to 400 lines and between 5-7 threads, outside of this the context window gets
+too large for single promps with LLMS. 
