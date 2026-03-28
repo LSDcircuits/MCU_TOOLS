@@ -5,10 +5,11 @@ from PySide6.QtWidgets import QApplication, QWidget, QPushButton
 
 # basic example of how to use the Pyside6 Qtmodule to create buttons to move around on the screen.
 # Used as template for making GUI in lunix operatig systems which can be used as sensor nodes. 
-# Main focus:
+# Main focus: 
 #
 # - create widdget UI widget with buttons
 # - have a OUTPUT when pressed
+# - make it human readable
 
 class MyWindow(QWidget):
     def __init__(self):
