@@ -1,0 +1,269 @@
+# Linux Essential Commands Reference
+
+## List Directory (ls): ls -(option)
+
+| Option | Meaning |
+| ------ | --------- |
+| `-l`   | Long format (permissions, owner, size, date) |
+| `-a`   | Show all files (including hidden `.` files) |
+| `-h`   | Human-readable sizes (KB, MB, GB) |
+| `-r`   | Reverse order |
+| `-t`   | Sort by time modified (newest first) |
+| `-S`   | Sort by file size (largest first) |
+| `-d`   | List directories themselves, not contents |
+| `-R`   | Recursive listing |
+| `-i`   | Show inode numbers |
+| `-1`   | One file per line |
+
+Example:
+ls -lah /home/user/
+
+
+## Change Mode (chmod): chmod -(option) MODE FILE
+
+| Option | Meaning |
+| ------ | --------- |
+| `-R`   | Recursive (directories and contents) |
+| `-v`   | Verbose (show changes) |
+| `-c`   | Like verbose, but report only when changes made |
+| `-f`   | Force (suppress most error messages) |
+| `--reference=RFILE` | Set permissions to match RFILE |
+
+Modes:
+chmod 755 file.txt    (rwxr-xr-x)
+chmod u+x script.sh   (add execute for owner)
+chmod -R 700 dir/     (recursive secure)
+
+
+## Change Ownership (chown): chown -(option) USER:GROUP FILE
+
+| Option | Meaning |
+| ------ | --------- |
+| `-R`   | Recursive |
+| `-v`   | Verbose |
+| `-c`   | Report changes only |
+| `-f`   | Suppress errors |
+| `--reference=RFILE` | Match ownership to RFILE |
+
+Example:
+chown -R user:group /var/www/
+
+
+## Archive (tar): tar -(option) ARCHIVE FILES
+
+| Option | Meaning |
+| ------ | --------- |
+| `-c`   | Create new archive |
+| `-x`   | Extract from archive |
+| `-t`   | List contents |
+| `-f`   | Specify filename (must be last) |
+| `-v`   | Verbose (show progress) |
+| `-z`   | Compress with gzip (.tar.gz) |
+| `-j`   | Compress with bzip2 (.tar.bz2) |
+| `-J`   | Compress with xz (.tar.xz) |
+| `-p`   | Preserve permissions |
+| `-C`   | Change to directory before operation |
+
+Examples:
+tar -czvf backup.tar.gz /home/user/docs/
+tar -xzvf backup.tar.gz -C /restore/path/
+
+
+## Process Status (ps): ps -(option)
+
+| Option | Meaning |
+| ------ | --------- |
+| `aux`  | Show all processes for all users (BSD style) |
+| `-ef`  | Full format listing (standard) |
+| `-e`   | All processes |
+| `-f`   | Full format |
+| `-u USER` | Processes for specific user |
+| `-p PID` | Specific process ID |
+| `--sort=-%mem` | Sort by memory usage |
+
+Example:
+ps aux | grep apache
+
+
+## View File Contents (cat/head/tail)
+
+### cat: cat -(option) FILE
+
+| Option | Meaning |
+| ------ | --------- |
+| `-n`   | Number all output lines |
+| `-b`   | Number non-empty lines only |
+| `-s`   | Squeeze multiple blank lines into one |
+| `-E`   | Show $ at end of each line |
+| `-T`   | Show TAB characters as ^I |
+
+### head/tail: head -(option) FILE
+
+| Option | Meaning |
+| ------ | --------- |
+| `-n 20` | Show first/last 20 lines (default: 10) |
+| `-c 100` | Show first/last 100 bytes |
+| `-f`   | **Follow** file as it grows (tail only, live view) |
+
+Example:
+tail -f /var/log/syslog
+
+
+## Disk Usage (df/du)
+
+### Disk Free (df): df -(option)
+
+| Option | Meaning |
+| ------ | --------- |
+| `-h`   | Human-readable sizes |
+| `-T`   | Show filesystem type |
+| `-i`   | Show inode usage instead of blocks |
+| `-a`   | Show all filesystems |
+
+### Disk Usage (du): du -(option) DIRECTORY
+
+| Option | Meaning |
+| ------ | --------- |
+| `-h`   | Human-readable |
+| `-s`   | Summarize (total for directory only) |
+| `-a`   | Show files, not just directories |
+| `-c`   | Display grand total |
+| `--max-depth=1` | Limit directory depth |
+| `-x`   | Skip directories on different filesystems |
+
+Example:
+du -sh /var/log/
+
+
+## Secure Shell (ssh): ssh -(option) USER@HOST
+
+| Option | Meaning |
+| ------ | --------- |
+| `-p 2222` | Connect to specific port |
+| `-i KEY` | Use specific private key |
+| `-v`   | Verbose (debug connection) |
+| `-X`   | Enable X11 forwarding |
+| `-N`   | No command execution (port forwarding only) |
+| `-f`   | Background before command execution |
+| `-L PORT:HOST:HOSTPORT` | Local port forwarding |
+
+Example:
+ssh -i ~/.ssh/key.pem -p 2222 user@server.com
+
+
+## Secure Copy (scp): scp -(option) SOURCE DEST
+
+| Option | Meaning |
+| ------ | --------- |
+| `-P 2222` | Port (capital P, unlike ssh) |
+| `-r`   | Recursive (directories) |
+| `-p`   | Preserve modification times |
+| `-C`   | Enable compression |
+| `-i KEY` | Use specific identity file |
+| `-v`   | Verbose |
+
+Example:
+scp -r -P 2222 -i key.pem /local/dir user@host:/remote/path/
+
+
+## System Control (systemctl): systemctl COMMAND SERVICE
+
+| Command | Meaning |
+| ------- | --------- |
+| `start` | Start service |
+| `stop` | Stop service |
+| `restart` | Restart service |
+| `reload` | Reload configuration (without restart) |
+| `enable` | Start on boot |
+| `disable` | Don't start on boot |
+| `status` | Check service status |
+| `list-units --type=service` | List all services |
+
+Example:
+systemctl restart sshd
+systemctl enable nginx
+
+
+## Create Link (ln): ln -(option) TARGET LINK_NAME
+
+| Option | Meaning |
+| ------ | --------- |
+| `-s`   | Create symbolic link (symlink) |
+| `-f`   | Force (remove existing destination) |
+| `-i`   | Interactive (prompt before overwrite) |
+| `-v`   | Verbose |
+| `-r`   | Create relative link |
+
+Examples:
+ln -s /path/to/file linkname    (soft/symbolic link)
+ln file.txt file_hardlink        (hard link)
+
+
+## Superuser (sudo/su)
+
+### sudo: sudo -(option) COMMAND
+
+| Option | Meaning |
+| ------ | --------- |
+| `-u USER` | Run as specific user |
+| `-i`   | Simulate initial login (run shell) |
+| `-s`   | Run shell (preserve environment) |
+| `-E`   | Preserve user environment |
+| `-H`   | Set HOME to target user's home |
+| `-l`   | List allowed commands |
+
+### su: su -(option) USER
+
+| Option | Meaning |
+| ------ | --------- |
+| `-` / `-l` | Login shell (full environment) |
+| `-c CMD` | Run single command |
+| `-s SHELL` | Use specific shell |
+
+Example:
+sudo -u www-data whoami
+su - root
+
+
+## Network Utilities
+
+### ping: ping -(option) HOST
+
+| Option | Meaning |
+| ------ | --------- |
+| `-c 4` | Count (stop after 4 packets) |
+| `-i 2` | Interval (seconds between pings) |
+| `-s 100` | Packet size (bytes) |
+| `-t`   | Set TTL |
+| `-I iface` | Use specific interface |
+| `-4` / `-6` | Force IPv4/IPv6 |
+
+### curl: curl -(option) URL
+
+| Option | Meaning |
+| ------ | --------- |
+| `-O`   | Save with remote filename |
+| `-o FILE` | Save as specific filename |
+| `-L`   | Follow redirects |
+| `-I`   | Fetch headers only |
+| `-s`   | Silent (no progress) |
+| `-v`   | Verbose (debug) |
+| `-X POST` | Use POST method |
+| `-H "Header"` | Add header |
+| `-d "data"` | POST data |
+
+### wget: wget -(option) URL
+
+| Option | Meaning |
+| ------ | --------- |
+| `-O FILE` | Output to specific file |
+| `-P DIR` | Save to directory |
+| `-c`   | Continue partial download |
+| `-b`   | Background download |
+| `-r`   | Recursive download |
+| `-np`  | No parent directories |
+| `-N`   | Timestamping (only if newer) |
+
+Examples:
+curl -O https://example.com/file.zip
+wget -c https://example.com/large.iso
