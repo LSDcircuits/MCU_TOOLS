@@ -1,0 +1,663 @@
+
+import sys
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QGridLayout, QLineEdit, QPushButton, QLabel, QSpinBox,
+    QTextEdit, QMessageBox, QFrame, QScrollArea, QCheckBox
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QColor, QPalette
+import sympy as sp
+from sympy import symbols, Eq, solve, Matrix, Rational, simplify, factor
+
+
+class SymbolicMatrixCell(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAlignment(Qt.AlignCenter)
+        self.setFont(QFont("Consolas", 11))
+        self.setFixedSize(100, 40)
+        self.setStyleSheet("""
+            QLineEdit {
+                border: 2px solid #4a5568;
+                border-radius: 6px;
+                background-color: #2d3748;
+                color: #e2e8f0;
+                padding: 4px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #63b3ed;
+                background-color: #1a202c;
+            }
+        """)
+    
+    def get_expr(self):
+        text = self.text().strip()
+        if not text:
+            return sp.Integer(0)
+        try:
+            return sp.sympify(text)
+        except:
+            return None
+    
+    def set_expr(self, expr):
+        self.setText(str(expr))
+
+
+class SymbolicMatrixGrid(QWidget):
+    def __init__(self, rows, cols, parent=None):
+        super().__init__(parent)
+        self.rows = rows
+        self.cols = cols
+        self.cells = []
+        self.layout = QGridLayout(self)
+        self.layout.setSpacing(6)
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.build_grid()
+    
+    def build_grid(self):
+        while self.layout.count():
+            item = self.layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self.cells = []
+        
+        for r in range(self.rows):
+            row_cells = []
+            for c in range(self.cols):
+                cell = SymbolicMatrixCell(self)
+                self.layout.addWidget(cell, r, c)
+                row_cells.append(cell)
+                if c == self.cols - 2 and self.cols > 2:
+                    cell.setStyleSheet(cell.styleSheet().replace(
+                        "border: 2px solid #4a5568;",
+                        "border: 2px solid #4a5568; border-right: 3px solid #fc8181;"
+                    ))
+            self.cells.append(row_cells)
+    
+    def resize_grid(self, rows, cols):
+        self.rows = rows
+        self.cols = cols
+        self.build_grid()
+    
+    def get_matrix(self):
+        matrix = []
+        for r in range(self.rows):
+            row = []
+            for c in range(self.cols):
+                val = self.cells[r][c].get_expr()
+                if val is None:
+                    return None, f"Invalid expression at row {r+1}, col {c+1}"
+                row.append(val)
+            matrix.append(row)
+        return Matrix(matrix), None
+    
+    def set_matrix(self, matrix):
+        rows, cols = matrix.shape
+        if rows != self.rows or cols != self.cols:
+            self.resize_grid(rows, cols)
+        for r in range(rows):
+            for c in range(cols):
+                self.cells[r][c].set_expr(matrix[r, c])
+
+
+class SymbolicGaussianSolver(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Symbolic Gaussian Elimination Solver")
+        self.setMinimumSize(1100, 800)
+        self.setup_ui()
+        self.apply_dark_theme()
+    
+    def setup_ui(self):
+        central = QWidget()
+        self.setCentralWidget(central)
+        main_layout = QHBoxLayout(central)
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        
+        # Left panel
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setSpacing(12)
+        
+        title = QLabel("🔢 Symbolic Matrix Solver")
+        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #63b3ed; margin-bottom: 10px;")
+        left_layout.addWidget(title)
+        
+        info = QLabel("Enter: 2*a, x+3*y, a/2, sqrt(2), pi, R1+R2, etc.")
+        info.setAlignment(Qt.AlignCenter)
+        info.setStyleSheet("color: #a0aec0; font-size: 11px; margin-bottom: 5px;")
+        left_layout.addWidget(info)
+        
+        # Size controls
+        size_frame = QFrame()
+        size_frame.setStyleSheet("background-color: #2d3748; border-radius: 8px;")
+        size_layout = QHBoxLayout(size_frame)
+        size_layout.setContentsMargins(10, 8, 10, 8)
+        
+        size_layout.addWidget(QLabel("Equations:"))
+        self.rows_spin = QSpinBox()
+        self.rows_spin.setRange(2, 6)
+        self.rows_spin.setValue(3)
+        self.rows_spin.setStyleSheet(self.spinbox_style())
+        self.rows_spin.valueChanged.connect(self.update_matrix_size)
+        size_layout.addWidget(self.rows_spin)
+        
+        size_layout.addWidget(QLabel("Variables:"))
+        self.cols_spin = QSpinBox()
+        self.cols_spin.setRange(2, 6)
+        self.cols_spin.setValue(3)
+        self.cols_spin.setStyleSheet(self.spinbox_style())
+        self.cols_spin.valueChanged.connect(self.update_matrix_size)
+        size_layout.addWidget(self.cols_spin)
+        
+        size_layout.addStretch()
+        left_layout.addWidget(size_frame)
+        
+        # Matrix
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background: transparent;")
+        
+        self.matrix_widget = SymbolicMatrixGrid(3, 4)
+        scroll.setWidget(self.matrix_widget)
+        left_layout.addWidget(scroll)
+        
+        # Options
+        opts_frame = QFrame()
+        opts_layout = QHBoxLayout(opts_frame)
+        opts_layout.setContentsMargins(5, 5, 5, 5)
+        
+        self.simplify_check = QCheckBox("Simplify")
+        self.simplify_check.setChecked(True)
+        self.simplify_check.setStyleSheet("color: #e2e8f0;")
+        opts_layout.addWidget(self.simplify_check)
+        
+        self.factor_check = QCheckBox("Factor")
+        self.factor_check.setStyleSheet("color: #e2e8f0;")
+        opts_layout.addWidget(self.factor_check)
+        
+        self.rational_check = QCheckBox("Rational")
+        self.rational_check.setChecked(True)
+        self.rational_check.setStyleSheet("color: #e2e8f0;")
+        opts_layout.addWidget(self.rational_check)
+        
+        opts_layout.addStretch()
+        left_layout.addWidget(opts_frame)
+        
+        # Buttons
+        btn_frame = QFrame()
+        btn_layout = QHBoxLayout(btn_frame)
+        btn_layout.setContentsMargins(0, 5, 0, 5)
+        
+        self.elim_btn = QPushButton("▶ Gaussian Elim")
+        self.elim_btn.setStyleSheet(self.button_style("#48bb78"))
+        self.elim_btn.clicked.connect(self.gaussian_elimination)
+        btn_layout.addWidget(self.elim_btn)
+        
+        self.solve_btn = QPushButton("🔍 Solve")
+        self.solve_btn.setStyleSheet(self.button_style("#4299e1"))
+        self.solve_btn.clicked.connect(self.solve_system)
+        btn_layout.addWidget(self.solve_btn)
+        
+        self.rref_btn = QPushButton("📐 RREF")
+        self.rref_btn.setStyleSheet(self.button_style("#ed8936"))
+        self.rref_btn.clicked.connect(self.show_rref)
+        btn_layout.addWidget(self.rref_btn)
+        
+        self.clear_btn = QPushButton("✕ Clear")
+        self.clear_btn.setStyleSheet(self.button_style("#fc8181"))
+        self.clear_btn.clicked.connect(self.clear_all)
+        btn_layout.addWidget(self.clear_btn)
+        
+        left_layout.addWidget(btn_frame)
+        
+        # Examples
+        ex_frame = QFrame()
+        ex_frame.setStyleSheet("background-color: #2d3748; border-radius: 8px;")
+        ex_layout = QHBoxLayout(ex_frame)
+        ex_layout.setContentsMargins(10, 5, 10, 5)
+        ex_layout.addWidget(QLabel("Examples:"))
+        
+        ex1 = QPushButton("Symbolic")
+        ex1.setStyleSheet(self.small_btn_style())
+        ex1.clicked.connect(lambda: self.load_example("symbolic3"))
+        ex_layout.addWidget(ex1)
+        
+        ex2 = QPushButton("Parametric")
+        ex2.setStyleSheet(self.small_btn_style())
+        ex2.clicked.connect(lambda: self.load_example("parametric"))
+        ex_layout.addWidget(ex2)
+        
+        ex3 = QPushButton("Underdet.")
+        ex3.setStyleSheet(self.small_btn_style())
+        ex3.clicked.connect(lambda: self.load_example("under"))
+        ex_layout.addWidget(ex3)
+        
+        ex4 = QPushButton("Electrical")
+        ex4.setStyleSheet(self.small_btn_style())
+        ex4.clicked.connect(lambda: self.load_example("electrical"))
+        ex_layout.addWidget(ex4)
+        
+        left_layout.addWidget(ex_frame)
+        
+        # Right panel
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setSpacing(12)
+        
+        res_label = QLabel("📋 Results")
+        res_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        res_label.setStyleSheet("color: #63b3ed;")
+        right_layout.addWidget(res_label)
+        
+        self.result_text = QTextEdit()
+        self.result_text.setReadOnly(True)
+        self.result_text.setFont(QFont("Consolas", 12))
+        self.result_text.setMinimumHeight(200)
+        self.result_text.setStyleSheet(self.text_style())
+        right_layout.addWidget(self.result_text)
+        
+        steps_label = QLabel("🔍 Step-by-Step")
+        steps_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        steps_label.setStyleSheet("color: #ed8936;")
+        right_layout.addWidget(steps_label)
+        
+        self.steps_text = QTextEdit()
+        self.steps_text.setReadOnly(True)
+        self.steps_text.setFont(QFont("Consolas", 11))
+        self.steps_text.setStyleSheet(self.text_style())
+        right_layout.addWidget(self.steps_text)
+        
+        main_layout.addWidget(left_panel, 2)
+        main_layout.addWidget(right_panel, 3)
+    
+    def update_matrix_size(self):
+        rows = self.rows_spin.value()
+        cols = self.cols_spin.value()
+        self.matrix_widget.resize_grid(rows, cols + 1)
+    
+    def format_expr(self, expr):
+        if expr is None:
+            return "0"
+        if self.rational_check.isChecked():
+            expr = sp.nsimplify(expr)
+        if self.factor_check.isChecked():
+            expr = factor(expr)
+        elif self.simplify_check.isChecked():
+            expr = simplify(expr)
+        return str(expr)
+    
+    def matrix_to_string(self, matrix, highlight_row=None):
+        rows, cols = matrix.shape
+        # Convert all to strings first to find widths
+        str_matrix = []
+        for r in range(rows):
+            row_strs = []
+            for c in range(cols):
+                s = self.format_expr(matrix[r, c])
+                row_strs.append(s)
+            str_matrix.append(row_strs)
+        
+        # Find max width per column
+        col_widths = [0] * cols
+        for r in range(rows):
+            for c in range(cols):
+                col_widths[c] = max(col_widths[c], len(str_matrix[r][c]))
+        
+        # Add padding
+        col_widths = [w + 2 for w in col_widths]
+        
+        lines = []
+        for r in range(rows):
+            parts = []
+            for c in range(cols - 1):
+                parts.append(str_matrix[r][c].center(col_widths[c]))
+            # RHS
+            rhs = str_matrix[r][-1].center(col_widths[-1])
+            line = " | ".join([" ".join(parts), rhs])
+            prefix = ">>> " if r == highlight_row else "    "
+            lines.append(f"{prefix}[ {line} ]")
+        return "\n".join(lines)
+    
+    def gaussian_elimination(self):
+        M, error = self.matrix_widget.get_matrix()
+        if error:
+            QMessageBox.warning(self, "Input Error", error)
+            return
+        
+        rows, cols = M.shape
+        n = rows
+        m = cols - 1
+        
+        steps = []
+        steps.append("=" * 60)
+        steps.append("SYMBOLIC GAUSSIAN ELIMINATION")
+        steps.append("=" * 60)
+        steps.append(f"Initial Augmented Matrix ({rows}×{cols}):")
+        steps.append(self.matrix_to_string(M))
+        
+        pivot_row = 0
+        for col in range(m):
+            pivot_found = False
+            for r in range(pivot_row, n):
+                if M[r, col] != 0:
+                    if r != pivot_row:
+                        M.row_swap(r, pivot_row)
+                        steps.append("")
+                        steps.append(f"🔄 Swap R{r+1} ↔ R{pivot_row+1} (pivot in col {col+1})")
+                        steps.append(self.matrix_to_string(M, pivot_row))
+                    pivot_found = True
+                    break
+            
+            if not pivot_found:
+                steps.append("")
+                steps.append(f"⚠ No pivot in column {col+1}, skipping...")
+                continue
+            
+            pivot = M[pivot_row, col]
+            if pivot != 1 and pivot != 0:
+                M[pivot_row, :] = M[pivot_row, :] / pivot
+                steps.append("")
+                steps.append(f"➗ R{pivot_row+1} ← R{pivot_row+1} / ({self.format_expr(pivot)})")
+                steps.append(self.matrix_to_string(M, pivot_row))
+            
+            for r in range(pivot_row + 1, n):
+                factor = M[r, col]
+                if factor != 0:
+                    M[r, :] = M[r, :] - factor * M[pivot_row, :]
+                    M[r, :] = sp.simplify(M[r, :])
+                    steps.append("")
+                    steps.append(f"➖ R{r+1} ← R{r+1} - ({self.format_expr(factor)})×R{pivot_row+1}")
+                    steps.append(self.matrix_to_string(M, r))
+            
+            pivot_row += 1
+            if pivot_row >= n:
+                break
+        
+        steps.append("")
+        steps.append("=" * 60)
+        steps.append("ROW ECHELON FORM ACHIEVED")
+        steps.append("=" * 60)
+        steps.append(self.matrix_to_string(M))
+        
+        # FIX: Use setPlainText with actual newlines, not escaped \\n
+        self.steps_text.setPlainText("\n".join(steps))
+        self.result_text.setPlainText("Row Echelon Form computed.\nUse 'Solve' or 'RREF' for solutions.")
+        self.current_matrix = M
+    
+    def show_rref(self):
+        M, error = self.matrix_widget.get_matrix()
+        if error:
+            QMessageBox.warning(self, "Input Error", error)
+            return
+        
+        steps = []
+        steps.append("=" * 60)
+        steps.append("REDUCED ROW ECHELON FORM (RREF)")
+        steps.append("=" * 60)
+        
+        rref_matrix, pivot_cols = M.rref()
+        
+        steps.append("")
+        steps.append("RREF Result:")
+        steps.append(self.matrix_to_string(rref_matrix))
+        steps.append(f"\nPivot columns: {[c+1 for c in pivot_cols]}")
+        
+        rows, cols = rref_matrix.shape
+        m = cols - 1
+        
+        steps.append("")
+        steps.append("-" * 40)
+        steps.append("SOLUTION ANALYSIS")
+        steps.append("-" * 40)
+        
+        inconsistent = False
+        for r in range(rows):
+            if all(rref_matrix[r, c] == 0 for c in range(m)) and rref_matrix[r, m] != 0:
+                inconsistent = True
+                steps.append(f"❌ Row {r+1}: 0 = {self.format_expr(rref_matrix[r, m])} → INCONSISTENT")
+        
+        if inconsistent:
+            steps.append("")
+            steps.append("❌ SYSTEM HAS NO SOLUTION")
+        elif len(pivot_cols) < m:
+            steps.append("")
+            steps.append(f"⚠ Underdetermined: {m} variables, {len(pivot_cols)} pivots")
+            steps.append("Free variables:")
+            free_vars = [c for c in range(m) if c not in pivot_cols]
+            for fv in free_vars:
+                steps.append(f"  x{fv+1} = free parameter")
+            
+            steps.append("")
+            steps.append("Basic variables in terms of free variables:")
+            for r_idx, pc in enumerate(pivot_cols):
+                expr = rref_matrix[r_idx, m]
+                for c in free_vars:
+                    coeff = rref_matrix[r_idx, c]
+                    if coeff != 0:
+                        expr = expr - coeff * sp.Symbol(f't{c+1}')
+                steps.append(f"  x{pc+1} = {self.format_expr(expr)}")
+        else:
+            steps.append("")
+            steps.append("✅ Unique solution:")
+            for i, pc in enumerate(pivot_cols):
+                steps.append(f"  x{pc+1} = {self.format_expr(rref_matrix[i, m])}")
+        
+        self.steps_text.setPlainText("\n".join(steps))
+        self.result_text.setPlainText("RREF analysis complete.")
+    
+    def solve_system(self):
+        M, error = self.matrix_widget.get_matrix()
+        if error:
+            QMessageBox.warning(self, "Input Error", error)
+            return
+        
+        rows, cols = M.shape
+        m = cols - 1
+        
+        var_names = [f'x{i+1}' for i in range(m)]
+        vars = symbols(var_names)
+        
+        equations = []
+        for r in range(rows):
+            lhs = sum(M[r, c] * vars[c] for c in range(m))
+            eq = Eq(lhs, M[r, m])
+            equations.append(eq)
+        
+        result = []
+        result.append("=" * 60)
+        result.append("SYSTEM OF EQUATIONS")
+        result.append("=" * 60)
+        
+        for i, eq in enumerate(equations):
+            result.append(f"Eq {i+1}: {eq}")
+        
+        try:
+            solution = solve(equations, vars, dict=True)
+            
+            result.append("")
+            result.append("=" * 60)
+            result.append("SOLUTION")
+            result.append("=" * 60)
+            
+            if not solution:
+                result.append("❌ No solution found (inconsistent)")
+            elif len(solution) == 1:
+                sol = solution[0]
+                result.append("✅ Unique Solution:")
+                for var in vars:
+                    if var in sol:
+                        val = sol[var]
+                        result.append(f"  {var} = {self.format_expr(val)}")
+                    else:
+                        result.append(f"  {var} = 0")
+            else:
+                result.append(f"⚠ {len(solution)} solution forms")
+                for i, sol in enumerate(solution[:3]):
+                    result.append(f"\nForm {i+1}:")
+                    for var, val in sol.items():
+                        result.append(f"  {var} = {self.format_expr(val)}")
+            
+            if solution:
+                result.append("")
+                result.append("-" * 40)
+                result.append("VERIFICATION")
+                result.append("-" * 40)
+                sol = solution[0]
+                for i, eq in enumerate(equations):
+                    lhs_val = eq.lhs.subs(sol)
+                    rhs_val = eq.rhs
+                    lhs_s = self.format_expr(simplify(lhs_val))
+                    rhs_s = self.format_expr(simplify(rhs_val))
+                    match = "✓" if simplify(lhs_val - rhs_val) == 0 else "✗"
+                    result.append(f"Eq {i+1}: {lhs_s} = {rhs_s} {match}")
+        
+        except Exception as e:
+            result.append("")
+            result.append(f"❌ Error: {str(e)}")
+            result.append("Try 'RREF Form' for parametric analysis.")
+        
+        self.result_text.setPlainText("\n".join(result))
+    
+    def load_example(self, ex_type):
+        if ex_type == "symbolic3":
+            self.rows_spin.setValue(3)
+            self.cols_spin.setValue(3)
+            self.update_matrix_size()
+            ex = [
+                ['2*a', 'b', '-c', '8'],
+                ['-3*a', '-b', '2*c', '-11'],
+                ['-2*a', 'b', '2*c', '-3']
+            ]
+        elif ex_type == "parametric":
+            self.rows_spin.setValue(3)
+            self.cols_spin.setValue(3)
+            self.update_matrix_size()
+            ex = [
+                ['x', 'y', 'z', '6'],
+                ['2*x', '3*y', 'z', '11'],
+                ['x', 'y', '2*z', '7']
+            ]
+        elif ex_type == "under":
+            self.rows_spin.setValue(2)
+            self.cols_spin.setValue(3)
+            self.update_matrix_size()
+            ex = [
+                ['x', 'y', 'z', '1'],
+                ['2*x', '2*y', '2*z', '2']
+            ]
+        elif ex_type == "electrical":
+            self.rows_spin.setValue(3)
+            self.cols_spin.setValue(3)
+            self.update_matrix_size()
+            ex = [
+                ['R1+R2', '-R2', '0', 'V1'],
+                ['-R2', 'R2+R3+R4', '-R4', '0'],
+                ['0', '-R4', 'R4+R5', '-V2']
+            ]
+        
+        for r in range(len(ex)):
+            for c in range(len(ex[0])):
+                self.matrix_widget.cells[r][c].setText(ex[r][c])
+    
+    def clear_all(self):
+        for r in range(self.matrix_widget.rows):
+            for c in range(self.matrix_widget.cols):
+                self.matrix_widget.cells[r][c].clear()
+        self.result_text.clear()
+        self.steps_text.clear()
+    
+    def button_style(self, color):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{ background-color: {color}aa; }}
+            QPushButton:pressed {{ background-color: {color}88; }}
+        """
+    
+    def small_btn_style(self):
+        return """
+            QPushButton {
+                background-color: #4a5568;
+                color: #e2e8f0;
+                border: none;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+            QPushButton:hover { background-color: #718096; }
+        """
+    
+    def spinbox_style(self):
+        return """
+            QSpinBox {
+                background-color: #2d3748;
+                color: #e2e8f0;
+                border: 2px solid #4a5568;
+                border-radius: 4px;
+                padding: 4px;
+                min-width: 50px;
+            }
+        """
+    
+    def text_style(self):
+        return """
+            QTextEdit {
+                background-color: #1a202c;
+                color: #e2e8f0;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                padding: 12px;
+            }
+        """
+    
+    def apply_dark_theme(self):
+        self.setStyleSheet("""
+            QMainWindow { background-color: #1a202c; }
+            QWidget { background-color: #1a202c; color: #e2e8f0; }
+            QLabel { color: #a0aec0; font-size: 12px; }
+            QCheckBox { color: #e2e8f0; }
+        """)
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor("#1a202c"))
+    palette.setColor(QPalette.WindowText, QColor("#e2e8f0"))
+    palette.setColor(QPalette.Base, QColor("#2d3748"))
+    palette.setColor(QPalette.Text, QColor("#e2e8f0"))
+    palette.setColor(QPalette.Button, QColor("#4a5568"))
+    palette.setColor(QPalette.ButtonText, QColor("#e2e8f0"))
+    app.setPalette(palette)
+    
+    window = SymbolicGaussianSolver()
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
+
+
+with open('/mnt/agents/output/symbolic_gaussian_solver.py', 'w') as f:
+    f.write(code)
+
+print("Fixed! The main issues were:")
+print("1. Using \\n in strings (Python escape) instead of actual newlines")
+print("2. Using setPlainText() with '\\n'.join() which was double-escaping")
+print("3. Now using '\n'.join() for real newlines in QTextEdit")
+print("4. Also fixed matrix alignment with proper column width calculation")
