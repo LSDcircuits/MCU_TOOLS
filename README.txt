@@ -1,4 +1,4 @@
-Working on this repository to be able to debug MCUs Quickly.
+Working on this repository to be able to debug MCUs & setup controll systems Quickly. 
 
 Main available files are the use of Qt on pyside6, available files are used to
 Follow the documentaiton on fucntions used ( fucntional examples & not fucntional code)
@@ -37,4 +37,4 @@ give back spaggethy code.
 
 If interested in using Kimi K2 for making logical single widget apps, using (buttons GUI + flow) as a prompt allows it to
 give back rather reliable code up to 400 lines and between 5-7 threads, outside of this the context window gets
-too large for single promps with LLMS. 
+too large for single promps. 
