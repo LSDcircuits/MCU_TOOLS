@@ -3,12 +3,6 @@ Working on this repository to be able to debug MCUs & setup controll systems Qui
 Main available files are the use of Qt on pyside6, available files are used to
 Follow the documentaiton on fucntions used ( fucntional examples & not fucntional code)
 
-functional codes:
-- Serial
-
-functional examples:
-- GUI
-
 Currently workig:
 
 - Serial Port scan & connect
@@ -22,19 +16,20 @@ Adding:
 - Automated PIPELINES
 - JWC DEBUG (FT232RL)
 
+
+Extras
+
 CONTROL SYSTEMS:
  - Fourier winding
  - Fourier winding form data
- - MCU fourier (the SLowest FFT to exist)
- - Root locus (simplest possible to check answers)
+ - MCU fourier (the SLowest FT to exist) 
+ - Root locus (simplest possible to check answers in practice)
  - mass damper system (Block diagonal (modal) , expermineting with true diagonal) 
 
-Note: Alot of code here inst reliable, ive used Tne file called dataflow to setup
-a type of memory management sysrtem (kid of its python), value management system
-which i can feed LLM to make a app. its Useful sice having this structure works
-for most small projectsd and when aksign a LLm to use this as a template it doesent 
-give back spaggethy code. 
+Note: Control ststems code is made on AI based on the GUI code and workflow.
 
 If interested in using Kimi K2 for making logical single widget apps, using (buttons GUI + flow) as a prompt allows it to
 give back rather reliable code up to 400 lines and between 5-7 threads, outside of this the context window gets
 too large for single promps. 
+
+
