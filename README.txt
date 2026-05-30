@@ -26,7 +26,7 @@ CONTROL SYSTEMS:
  - Root locus (simplest possible to check answers in practice)
  - mass damper system (Block diagonal (modal) , expermineting with true diagonal) 
 
-Note: Control ststems code is made on AI based on the GUI code and workflow.
+Note: Control ststems code is made with AI based on the GUI code and workflow.
 
 If interested in using Kimi K2 for making logical single widget apps, using (buttons GUI + flow) as a prompt allows it to
 give back rather reliable code up to 400 lines and between 5-7 threads, outside of this the context window gets
